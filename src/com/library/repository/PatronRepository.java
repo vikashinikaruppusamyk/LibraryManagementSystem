@@ -4,7 +4,7 @@ import com.library.model.Patron;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PatronRepository {
+public class PatronRepository implements PatronRepositoryInterface {
 
     private List<Patron> patrons = new ArrayList<>();
 
