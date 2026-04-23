@@ -23,7 +23,7 @@ src/
 ├── service/        → LendingService, InventoryService
 ├── factory/        → BookFactory, PatronFactory
 ├── observer/       → BookObserver interface, PatronNotificationObserver
-└── util/           → (reserved for helpers)
+└── util/           → reserved for future helpers (e.g. date formatters, validators)
 
 ---
 
