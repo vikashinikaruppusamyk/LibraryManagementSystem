@@ -3,17 +3,20 @@ package com.library.service;
 import com.library.model.Book;
 import com.library.model.BorrowRecord;
 import com.library.model.Patron;
-import com.library.repository.BookRepository;
-import com.library.repository.PatronRepository;
-
+import com.library.repository.BookRepositoryInterface;
+import com.library.repository.PatronRepositoryInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 
 public class LendingService {
 
-    private BookRepository bookRepository;
-    private PatronRepository patronRepository;
+    private static final Logger logger = LoggerFactory.getLogger(LendingService.class);
+    private BookRepositoryInterface bookRepository;
+    private PatronRepositoryInterface patronRepository;
 
-    public LendingService(BookRepository bookRepository, PatronRepository patronRepository) {
+    public LendingService(BookRepositoryInterface bookRepository,
+                          PatronRepositoryInterface patronRepository) {
         this.bookRepository = bookRepository;
         this.patronRepository = patronRepository;
     }
@@ -21,39 +24,35 @@ public class LendingService {
     public void checkoutBook(String isbn, String patronId) {
         Book book = bookRepository.findByIsbn(isbn);
         if (book == null) {
-            System.out.println("Book not found: " + isbn);
+            logger.error("Checkout failed - book not found: {}", isbn);
             return;
         }
         if (!book.isAvailable()) {
-            System.out.println("Book is already borrowed: " + book.getTitle());
+            logger.warn("Checkout failed - book already borrowed: {}", book.getTitle());
             return;
         }
-
         Patron patron = patronRepository.findById(patronId);
         if (patron == null) {
-            System.out.println("Patron not found: " + patronId);
+            logger.error("Checkout failed - patron not found: {}", patronId);
             return;
         }
-
         book.setAvailable(false);
         BorrowRecord record = new BorrowRecord(isbn, book.getTitle());
         patron.addBorrowRecord(record);
-        System.out.println("Checked out: " + book.getTitle() + " → " + patron.getName());
+        logger.info("Checked out: {} → {}", book.getTitle(), patron.getName());
     }
 
     public void returnBook(String isbn, String patronId) {
         Book book = bookRepository.findByIsbn(isbn);
         if (book == null) {
-            System.out.println("Book not found: " + isbn);
+            logger.error("Return failed - book not found: {}", isbn);
             return;
         }
-
         Patron patron = patronRepository.findById(patronId);
         if (patron == null) {
-            System.out.println("Patron not found: " + patronId);
+            logger.error("Return failed - patron not found: {}", patronId);
             return;
         }
-
         BorrowRecord activeRecord = null;
         for (BorrowRecord record : patron.getBorrowHistory()) {
             if (record.getIsbn().equals(isbn) && !record.isReturned()) {
@@ -61,14 +60,12 @@ public class LendingService {
                 break;
             }
         }
-
         if (activeRecord == null) {
-            System.out.println("No active borrow found for this book and patron.");
+            logger.warn("Return failed - no active borrow found for ISBN: {}", isbn);
             return;
         }
-
         activeRecord.setReturnDate(LocalDate.now());
         book.setAvailable(true);
-        System.out.println("Returned: " + book.getTitle() + " ← " + patron.getName());
+        logger.info("Returned: {} ← {}", book.getTitle(), patron.getName());
     }
 }
